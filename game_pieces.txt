@@ -1,0 +1,4 @@
+duke: su sd - sl sr
+foot: u d l r - u2 ul ur dl dr
+seer: ur ul dr dl ju2 jl2 jr2 jd2 - u l r d jul2 jur2 jdl2 jdr2
+priest: sul sur sdr sdl - ul ur dl dr jul2 jur2 jdl2 jdr2
