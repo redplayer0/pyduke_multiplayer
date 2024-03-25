@@ -23,6 +23,9 @@ class MenuState:
         return f"ENTER ROOM NAME: {self.room.upper()}"
 
     def update(self):
+        if pyxel.btnp(pyxel.KEY_F5):
+            self.game.client.send("/get_rooms")
+
         if pyxel.btnp(pyxel.KEY_BACKSPACE):
             self.room = self.room[:-1]
             return

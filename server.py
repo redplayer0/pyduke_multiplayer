@@ -248,7 +248,7 @@ if __name__ == "__main__":
         sprint(f"{client.tag} sent: {data}")
 
     @server.command("/uid")
-    def broadcast(server: Server, data: str, client):
+    def send_uid(server: Server, data: str, client):
         client.send(f"/uid {client.uid}")
 
     @server.command("/room")

@@ -54,7 +54,7 @@ def make_move(client: Client, opponent_move: str):
 @client.command("/won")
 def make_move(client: Client, opponent_move: str):
     client.game.wins += 1
-    client.game.state.phase = "won"
+    # client.game.state.phase = "won"
     client.game.resume()
 
 
