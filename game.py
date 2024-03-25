@@ -21,6 +21,8 @@ class Game:
     client: Client = None
 
     notifications: list[str] = field(default_factory=list)
+    wins: int = 0
+    loses: int = 0
 
     player: Player = field(default_factory=Player)
     in_hand: Piece = None
@@ -40,6 +42,18 @@ class Game:
         self.client.send("/uid")
 
         pyxel.run(self.update, self.draw)
+
+    def reset(self):
+        self.board: Board = Board()
+        self.state: Any = MenuState(self)
+        self.room: str = None
+        self.player: Player = Player()
+        self.in_hand: Piece = None
+        self.active: Piece = None
+        self.opponent_setup = {}
+
+        self.is_waiting = False
+        self.notifications = []
 
     def attach(self, client: Client):
         self.client = client

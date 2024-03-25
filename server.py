@@ -269,19 +269,26 @@ if __name__ == "__main__":
         client.send(f"/rooms {rooms}")
 
     @server.command("/positions")
-    def relay_turn(server: Server, data: str, client: ServerClient):
+    def send_positions(server: Server, data: str, client: ServerClient):
         if client.room and client.room.is_full and client.room.max_clients == 2:
             client.room_broadcast(f"/positions {data}")
 
     @server.command("/move")
-    def relay_turn(server: Server, data: str, client: ServerClient):
+    def send_move(server: Server, data: str, client: ServerClient):
         if client.room and client.room.is_full and client.room.max_clients == 2:
             client.room_broadcast(f"/move {data}")
 
     @server.command("/ready")
-    def relay_turn(server: Server, data: str, client: ServerClient):
+    def send_ready(server: Server, data: str, client: ServerClient):
         if client.room and client.room.is_full and client.room.max_clients == 2:
             if client == client.room.host:
                 client.send("/move")
+
+    @server.command("/lost")
+    def send_win(server: Server, data: str, client: ServerClient):
+        if client.room and client.room.is_full and client.room.max_clients == 2:
+            for c in client.room.clients:
+                if c != client:
+                    client.send("/won")
 
     server.console()

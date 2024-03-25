@@ -127,13 +127,16 @@ class PlayerTurnState:
 
         piece = game.board.get_piece(x, y)
 
+        if not game.board.duke_position:
+            game.loses += 1
+            self.phase = "lost"
+            game.client.send("/lost")
+
+        if game.is_waiting:
+            return
+
         match self.phase:
             case "standby":
-                # debug
-                if pyxel.btnp(pyxel.MOUSE_BUTTON_MIDDLE):
-                    self.phase = "end"
-                    return
-
                 # RIGHT CLICK
                 if pyxel.btnp(pyxel.MOUSE_BUTTON_RIGHT):
                     game.in_hand = game.player.pull_piece()
@@ -199,6 +202,9 @@ class PlayerTurnState:
                         self.possible_positions = []
                         self.phase = "standby"
                         return
+            case "lost" | "won":
+                if pyxel.btnp(pyxel.KEY_RETURN):
+                    game.reset()
 
     def draw(self):
         game = self.game
@@ -234,8 +240,11 @@ class PlayerTurnState:
                 pyxel.COLOR_YELLOW,
             )
 
-        if self.phase == "end":
-            pyxel.text(62, 80, "---> THE END <---", pyxel.COLOR_YELLOW)
+        if self.phase == "lost":
+            pyxel.text(0, 0, "YOU LOST", pyxel.COLOR_RED)
+
+        if self.phase == "win":
+            pyxel.text(0, 0, "YOU WON", pyxel.COLOR_RED)
 
         # draw piece in hand
         if game.in_hand:
