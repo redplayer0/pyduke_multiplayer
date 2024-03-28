@@ -14,24 +14,29 @@ TILE = 32
 
 @dataclass(slots=True)
 class Game:
-    board: Board = field(default_factory=Board)
-    state: Any = None
+    # networking
+    client: Client = None
     room: str = None
     rooms: list[str] = field(default_factory=list)
-    client: Client = None
+    is_waiting: bool = False
 
+    # game
+    board: Board = field(default_factory=Board)
+    state: Any = None
+
+    # info
     notifications: list[str] = field(default_factory=list)
     wins: int = 0
     loses: int = 0
     status: str = None
 
+    # player
     player: Player = field(default_factory=Player)
     in_hand: Piece = None
     active: Piece = None
 
+    # opponent
     opponent_setup: dict[tuple[int, int], Piece] = field(default_factory=dict)
-
-    is_waiting: bool = False
 
     def start(self):
         # pyxel stuff
@@ -40,7 +45,7 @@ class Game:
         pyxel.mouse(True)
 
         self.state = MenuState(self)
-        self.client.send("/uid")
+        self.client.send("uid:")
 
         pyxel.run(self.update, self.draw)
 
@@ -56,13 +61,12 @@ class Game:
         self.is_waiting = False
         self.notifications = []
         self.status = None
-        self.client.send("/exit_room")
+        self.client.send("exit_room:")
 
     def attach(self, client: Client):
         self.client = client
-        self.client.game = self
         self.client.connect()
-        self.client.send("/get_rooms")
+        self.client.send("get_rooms:")
 
     def wait(self):
         self.is_waiting = True
@@ -89,33 +93,8 @@ class Game:
         if self.is_waiting:
             pyxel.text(200, 0, "WAITING...", pyxel.COLOR_RED)
 
-        # for i in range(0, 3):
-        #     pyxel.text(
-        #         0, 240 - (i + 1) * 6, self.notifications[i], pyxel.COLOR_LIGHT_BLUE
-        #     )
-
         if self.notifications:
             pyxel.text(0, 234, self.notifications[0], pyxel.COLOR_LIGHT_BLUE)
-
-        # debug info
-        # x = pyxel.mouse_x // 32
-        # y = pyxel.mouse_y // 32
-        # piece = self.board.get_piece(x, y)
-        # pyxel.text(
-        #     0,
-        #     0,
-        #     f"active: {self.active.name if self.active else ''}",
-        #     pyxel.COLOR_BLACK,
-        # )
-        # pyxel.text(
-        #     0,
-        #     10,
-        #     f"under mouse: {piece.name if piece else ''}",
-        #     pyxel.COLOR_BLACK,
-        # )
-
-        # # grid position
-        # pyxel.text(0, 20, f"x: {x} y: {y}", pyxel.COLOR_BLACK)
 
 
 if __name__ == "__main__":

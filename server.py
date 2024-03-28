@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import socket
 from dataclasses import dataclass, field
-from functools import lru_cache
+from functools import lru_cache, partial
 from threading import Thread
 from typing import Any
 from uuid import uuid4
@@ -28,7 +28,7 @@ class Server:
     clients: list[ServerClient] = field(default_factory=list)
     rooms: list[Room] = field(default_factory=list)
     names: list[str] = field(default_factory=list)
-    commands: dict[str, Any] = field(default_factory=dict)
+    handlers: dict[str, Any] = field(default_factory=dict)
 
     def __hash__(self):
         return hash((self.ip, self.port))
@@ -64,12 +64,13 @@ class Server:
     # awaits client msgs message_size=1024 chars
     def handle_client(self, client):
         while True:
-            msg: str = client.conn.recv(1024).decode("utf-8")
-            if msg:
-                if cmd := extract_command(msg):
-                    self.dispath(cmd[0], cmd[1], client)
-                else:
-                    sprint(f"{client.tag} sent: {msg}")
+            data: str = client.conn.recv(1024).decode("utf-8")
+            if data:
+                msgs = [
+                    tuple(sub.strip().split(":")) for sub in data.strip().split("|")
+                ][:-1]
+                self.dispatch(msgs, client)
+                sprint(f"[recieved] {data}")
             else:
                 break
 
@@ -78,25 +79,23 @@ class Server:
 
     # Commands section
     # command decorator
-    def command(self, cmd: str):
-        def inner_command(f):
-            self.commands[cmd] = f
-            return f
 
-        return inner_command
+    def handle(self, func):
+        part = partial(func, self)
+        self.handlers[func.__name__] = part
+        return part
 
-    # calls function based on command from client
-    def dispath(self, cmd: str, *args, **kwargs):
-        if cmd in self.commands:
-            self.commands[cmd](self, *args, **kwargs)
-        else:
-            sprint(f"got command {cmd} with data {args[0]}")
+    def dispatch(self, msgs, client: ServerClient):
+        for msg in msgs:
+            if msg[0] in self.handlers:
+                self.handlers[msg[0]](msg[1], client)
+            else:
+                sprint(f"error with msg: {msg}")
 
     # client section
     def new_client(self, conn, addr) -> ServerClient:
         client = ServerClient(conn, addr)
         self.clients.append(client)
-        # client.send(f"/info {client.uid}")
         sprint(f"new client connected with add:{client.addr} and uid:{client.uid}")
         return client
 
@@ -113,6 +112,7 @@ class Server:
             remove_from_list(room.clients, client)
             if room.is_empty:
                 remove_from_list(self.rooms, room)
+        client.room = None
 
     # room section
     @lru_cache(30)
@@ -129,10 +129,10 @@ class Server:
     def join_room(self, client: ServerClient, room_name: str):
         room = self.get_room(room_name)
         if room.is_full:
-            client.send("/info room is full")
+            client.send("info:room is full")
             return
         if client.room == room:
-            client.send("/info you are already in this room")
+            client.send("info:you are already in this room")
             return
         elif client.room is not None:
             client.room.remove_client(client)
@@ -142,9 +142,9 @@ class Server:
 
         room.clients.append(client)
         client.room = room
-        client.send(f"/room {room_name}")
+        client.send(f"room:{room_name}")
         if room.is_full:
-            self.room_send(room, "/room_ready")
+            self.room_send(room, "room_ready:")
 
     # message section
     def send_to(self, client: ServerClient, msg):
@@ -199,6 +199,7 @@ class ServerClient:
         return self.name or self.uid
 
     def send(self, msg):
+        msg += "|"
         self.conn.send(msg.encode("utf-8"))
 
     def room_broadcast(self, msg):
@@ -240,72 +241,74 @@ class Room:
 
 
 if __name__ == "__main__":
-    server = Server().start()
+    server = Server()
 
     # commands
-    @server.command("/name")
-    def set_name(server: Server, data: str, client):
+    @server.handle
+    def name(server: Server, data: str, client: ServerClient):
         client.name = data
-        client.send(f"/name {data}")
+        client.send(f"name:{data}")
 
-    @server.command("/a")
-    def broadcast(server: Server, data: str, client):
-        server.broadcast(f"/relay {client.tag}: {data}", client)
+    @server.handle
+    def a(server: Server, data: str, client: ServerClient):
+        # TODO
+        server.broadcast(f"relay:{client.tag}: {data}", client)
         sprint(f"{client.tag} sent: {data}")
 
-    @server.command("/uid")
-    def send_uid(server: Server, data: str, client):
-        client.send(f"/uid {client.uid}")
+    @server.handle
+    def uid(server: Server, data: str, client: ServerClient):
+        client.send(f"uid:{client.uid}")
 
-    @server.command("/room")
-    def join_room(server: Server, room: str, client):
+    @server.handle
+    def room(server: Server, room: str, client: ServerClient):
         server.join_room(client, room)
 
-    @server.command("/w")
-    def whisper(server: Server, data: str, client):
+    @server.handle
+    def w(server: Server, data: str, client: ServerClient):
         target = data.split()[0]
         msg = data.replace(target, "").strip()
         for c in server.clients:
             if c.uid == target or c.name == target:
-                c.send(f"/info {client.tag} says: {msg}")
+                # TODO
+                c.send(f"info:{client.tag} says: {msg}")
 
-    @server.command("/get_rooms")
-    def get_rooms(server: Server, data: str, client):
+    @server.handle
+    def get_rooms(server: Server, data: str, client: ServerClient):
         rooms = ",".join([room.info for room in server.rooms])
-        client.send(f"/rooms {rooms}")
+        client.send(f"rooms:{rooms}")
 
-    @server.command("/positions")
-    def send_positions(server: Server, data: str, client: ServerClient):
+    @server.handle
+    def positions(server: Server, data: str, client: ServerClient):
         if client.room and client.room.is_full and client.room.max_clients == 2:
-            client.room_broadcast(f"/positions {data}")
+            client.room_broadcast(f"positions:{data}")
 
-    @server.command("/move")
-    def send_move(server: Server, data: str, client: ServerClient):
+    @server.handle
+    def move(server: Server, data: str, client: ServerClient):
         if client.room and client.room.is_full and client.room.max_clients == 2:
-            client.room_broadcast(f"/move {data}")
+            client.room_broadcast(f"move:{data}")
 
-    @server.command("/spawn_opponent")
-    def send_spawn(server: Server, data: str, client: ServerClient):
+    @server.handle
+    def spawn_opponent(server: Server, data: str, client: ServerClient):
         if client.room and client.room.is_full and client.room.max_clients == 2:
-            client.room_broadcast(f"/spawn_opponent {data}")
+            client.room_broadcast(f"spawn_opponent:{data}")
 
-    @server.command("/ready")
-    def send_ready(server: Server, data: str, client: ServerClient):
+    @server.handle
+    def ready(server: Server, data: str, client: ServerClient):
         if client.room and client.room.is_full and client.room.max_clients == 2:
             if client == client.room.host:
-                client.send("/move")
+                client.send("move:")
 
-    @server.command("/lost")
-    def send_win(server: Server, data: str, client: ServerClient):
+    @server.handle
+    def lost(server: Server, data: str, client: ServerClient):
         if client.room and client.room.is_full and client.room.max_clients == 2:
             for c in client.room.clients:
                 if c != client:
-                    c.send("/won")
+                    c.send("won:")
                 else:
-                    c.send("/lost")
+                    c.send("lost:")
 
-    @server.command("/exit_room")
+    @server.handle
     def exit_room(server: Server, data: str, client: ServerClient):
         server.client_exit_room(client)
 
-    server.console()
+    server.start().console()

@@ -5,7 +5,7 @@ from piece import Piece, PIECES
 
 def decode_opponent_piece_positions(msg):
     pieces = {}
-    raw_pieces = msg.split("|")
+    raw_pieces = msg.split("-")
     for raw_piece in raw_pieces:
         name, raw_posflip = raw_piece.split()
         x, y, flip = raw_posflip.split(",")

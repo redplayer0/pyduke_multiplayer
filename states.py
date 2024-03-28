@@ -24,7 +24,7 @@ class MenuState:
 
     def update(self):
         if pyxel.btnp(pyxel.KEY_F5):
-            self.game.client.send("/get_rooms")
+            self.game.client.send("get_rooms:")
 
         if pyxel.btnp(pyxel.KEY_BACKSPACE):
             self.room = self.room[:-1]
@@ -33,7 +33,7 @@ class MenuState:
         if pyxel.btnp(pyxel.KEY_RETURN):
             self.game.room = self.room
             if self.room:
-                self.game.client.send(f"/room {self.room}")
+                self.game.client.send(f"room:{self.room}")
                 self.game.wait()
 
         for k in range(97, 122):
@@ -58,7 +58,7 @@ class SetupState:
 
         if self.is_finished and game.opponent_setup:
             game.board.update_opponent(game.opponent_setup)
-            game.client.send("/ready")
+            game.client.send("ready:")
             game.finish_setup()
             return
 
@@ -67,7 +67,7 @@ class SetupState:
 
         if game.player.initial_pieces == [] and not game.in_hand:
             self.is_finished = True
-            game.client.send(f"/positions {game.board.piece_positions}")
+            game.client.send(f"positions:{game.board.piece_positions}")
             game.wait()
             return
 
@@ -140,7 +140,7 @@ class PlayerTurnState:
         if not game.board.duke_position and not self.gameover:
             game.loses += 1
             print("got here")
-            game.client.send("/lost")
+            game.client.send("lost:")
             self.gameover = True
             game.wait()
             return
@@ -184,7 +184,7 @@ class PlayerTurnState:
                     self.possible_positions = []
                     self.phase = "standby"
                     # send piece name and position in spawned
-                    game.client.send(f"/spawn_opponent {piece_name}->{x},{y}")
+                    game.client.send(f"spawn_opponent:{piece_name}->{x},{y}")
                     game.wait()
                     return
 
@@ -197,7 +197,7 @@ class PlayerTurnState:
                         board.positions[self.highlight[0]][self.highlight[1]] = None
                         # send previous and next position of moved piece
                         game.client.send(
-                            f"/move {self.highlight[0]},{self.highlight[1]}->{x},{y}"
+                            f"move:{self.highlight[0]},{self.highlight[1]}->{x},{y}"
                         )
 
                         self.highlight = None

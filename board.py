@@ -28,7 +28,7 @@ class Board:
                 if piece := self.positions[x][y]:
                     if piece.is_own:
                         msg += (
-                            f"{piece.name} {x},{y},{'f' if piece.is_flipped else ''}|"
+                            f"{piece.name} {x},{y},{'f' if piece.is_flipped else ''}-"
                         )
 
         return msg[:-1]
