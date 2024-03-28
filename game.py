@@ -4,10 +4,10 @@ from typing import Any
 import pyxel
 
 from board import Board
+from client import Client
 from piece import Piece
 from player import Player
 from states import MenuState, PlayerTurnState, SetupState
-from client import Client
 
 TILE = 32
 
@@ -75,6 +75,7 @@ class Game:
         self.state = SetupState(self)
 
     def finish_setup(self):
+        self.player.give_pieces(["seer", "priest"])
         self.state = PlayerTurnState(self)
 
     def update(self):

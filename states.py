@@ -179,11 +179,12 @@ class PlayerTurnState:
                     and (x, y) in self.possible_positions
                 ):
                     board.place_piece(x, y, game.in_hand)
+                    piece_name = game.in_hand.name
                     game.in_hand = None
                     self.possible_positions = []
                     self.phase = "standby"
-                    # TODO HERE send msg and wait()
-                    # game.next_player()
+                    # send piece name and position in spawned
+                    game.client.send(f"/spawn_opponent {piece_name}->{x},{y}")
                     game.wait()
                     return
 
@@ -194,7 +195,7 @@ class PlayerTurnState:
                         board.place_piece(x, y, game.active)
                         game.active.flip()
                         board.positions[self.highlight[0]][self.highlight[1]] = None
-                        # HERE send message
+                        # send previous and next position of moved piece
                         game.client.send(
                             f"/move {self.highlight[0]},{self.highlight[1]}->{x},{y}"
                         )

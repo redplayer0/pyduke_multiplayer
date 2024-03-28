@@ -79,6 +79,9 @@ class Piece:
                 )
             else:
                 pyxel.rect(x * t + 1 + 15 + dx * 5, y * t + 1 + 15 + dy * 5, 2, 2, 0)
+            pyxel.rectb(
+                x * t + 1 + 15 + dx * 5 - 1, y * t + 1 + 15 + dy * 5 - 1, 4, 4, 0
+            )
 
     def drag(self, x, y):
         white = pyxel.COLOR_WHITE
@@ -101,3 +104,4 @@ class Piece:
                 pyxel.rect(x + 15 + dx * 5, y + 15 + dy * 5, 2, 2, white)
             else:
                 pyxel.rect(x + 15 + dx * 5, y + 15 + dy * 5, 2, 2, 0)
+            pyxel.rectb(x + 15 + dx * 5 - 1, y + 15 + dy * 5 - 1, 4, 4, 0)

@@ -1,12 +1,10 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 
 import pyxel
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from piece import Piece
+from piece import Piece
 
 TILE = 32
 
@@ -68,6 +66,12 @@ class Board:
         x, y = [int(v) for v in raw_after.split(",")]
         self.positions[5 - x][5 - y] = self.positions[5 - px][5 - py].flip()
         self.positions[5 - px][5 - py] = None
+
+    def spawn_opponent(self, move: str):
+        print(move)
+        piece_name, raw_pos = move.split("->")
+        x, y = [int(v) for v in raw_pos.split(",")]
+        self.positions[5 - x][5 - y] = Piece(piece_name, is_own=False)
 
     def draw_pieces(self):
         for x, row in enumerate(self.positions):

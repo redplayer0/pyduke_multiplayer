@@ -284,6 +284,11 @@ if __name__ == "__main__":
         if client.room and client.room.is_full and client.room.max_clients == 2:
             client.room_broadcast(f"/move {data}")
 
+    @server.command("/spawn_opponent")
+    def send_spawn(server: Server, data: str, client: ServerClient):
+        if client.room and client.room.is_full and client.room.max_clients == 2:
+            client.room_broadcast(f"/spawn_opponent {data}")
+
     @server.command("/ready")
     def send_ready(server: Server, data: str, client: ServerClient):
         if client.room and client.room.is_full and client.room.max_clients == 2:

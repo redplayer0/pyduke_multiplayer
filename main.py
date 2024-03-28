@@ -1,6 +1,6 @@
-from game import Game
-from core import decode_opponent_piece_positions
 from client import Client
+from core import decode_opponent_piece_positions
+from game import Game
 
 client = Client(is_game=True)
 game = Game()
@@ -48,6 +48,13 @@ def make_move(client: Client, opponent_move: str):
     if opponent_move:
         client.game.board.move_opponent(opponent_move)
 
+    client.game.resume()
+
+
+@client.command("/spawn_opponent")
+def opponent_spawn(client: Client, opponent_move: str):
+    if opponent_move:
+        client.game.board.spawn_opponent(opponent_move)
     client.game.resume()
 
 
