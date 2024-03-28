@@ -54,8 +54,13 @@ def make_move(client: Client, opponent_move: str):
 @client.command("/won")
 def make_move(client: Client, opponent_move: str):
     client.game.wins += 1
-    # client.game.state.phase = "won"
-    client.game.resume()
+    client.game.status = "won"
+
+
+@client.command("/lost")
+def make_move(client: Client, opponent_move: str):
+    client.game.loses += 1
+    client.game.status = "lost"
 
 
 if __name__ == "__main__":

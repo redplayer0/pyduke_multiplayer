@@ -108,6 +108,12 @@ class Server:
             if room.is_empty:
                 remove_from_list(self.rooms, client.room)
 
+    def client_exit_room(self, client: ServerClient):
+        if room := client.room:
+            remove_from_list(room.clients, client)
+            if room.is_empty:
+                remove_from_list(self.rooms, room)
+
     # room section
     @lru_cache(30)
     def get_room(self, name: str) -> Room:
@@ -289,6 +295,12 @@ if __name__ == "__main__":
         if client.room and client.room.is_full and client.room.max_clients == 2:
             for c in client.room.clients:
                 if c != client:
-                    client.send("/won")
+                    c.send("/won")
+                else:
+                    c.send("/lost")
+
+    @server.command("/exit_room")
+    def exit_room(server: Server, data: str, client: ServerClient):
+        server.client_exit_room(client)
 
     server.console()

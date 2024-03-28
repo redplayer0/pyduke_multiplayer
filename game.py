@@ -23,6 +23,7 @@ class Game:
     notifications: list[str] = field(default_factory=list)
     wins: int = 0
     loses: int = 0
+    status: str = None
 
     player: Player = field(default_factory=Player)
     in_hand: Piece = None
@@ -54,6 +55,8 @@ class Game:
 
         self.is_waiting = False
         self.notifications = []
+        self.status = None
+        self.client.send("/exit_room")
 
     def attach(self, client: Client):
         self.client = client

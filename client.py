@@ -63,6 +63,7 @@ class Client:
             msg: str = self.con.recv(1024).decode("utf-8")
             if msg:
                 if cmd := extract_command(msg):
+                    # self.cprint(msg)
                     self.dispath(cmd[0], cmd[1])
                 else:
                     cprint(f"server: {msg}")

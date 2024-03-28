@@ -116,8 +116,8 @@ class PlayerTurnState:
             "standby",
             "spawning",
             "acting",
-            "end",
         ]
+        self.gameover = False
 
     def clamp(self, value, min_val, max_val):
         return max(min(value, max_val), min_val)
@@ -130,12 +130,19 @@ class PlayerTurnState:
 
         piece = game.board.get_piece(x, y)
 
-        if not game.board.duke_position:
-            game.loses += 1
-            self.phase = "lost"
-            game.client.send("/lost")
+        if game.status:
+            if pyxel.btnp(pyxel.KEY_RETURN):
+                game.reset()
 
         if game.is_waiting:
+            return
+
+        if not game.board.duke_position and not self.gameover:
+            game.loses += 1
+            print("got here")
+            game.client.send("/lost")
+            self.gameover = True
+            game.wait()
             return
 
         match self.phase:
@@ -205,9 +212,6 @@ class PlayerTurnState:
                         self.possible_positions = []
                         self.phase = "standby"
                         return
-            case "lost" | "won":
-                if pyxel.btnp(pyxel.KEY_RETURN):
-                    game.reset()
 
     def draw(self):
         game = self.game
@@ -243,10 +247,10 @@ class PlayerTurnState:
                 pyxel.COLOR_YELLOW,
             )
 
-        if self.phase == "lost":
+        if game.status == "lost":
             pyxel.text(0, 0, "YOU LOST", pyxel.COLOR_RED)
 
-        if self.phase == "win":
+        if game.status == "won":
             pyxel.text(0, 0, "YOU WON", pyxel.COLOR_RED)
 
         # draw piece in hand
